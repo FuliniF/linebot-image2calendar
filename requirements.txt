@@ -8,6 +8,6 @@ requests
 torch==2.3.1
 whisperx==3.1.1
 vertexai
-google.cloud
+google
 pydub
 git+https://github.com/ozgur/python-firebase
