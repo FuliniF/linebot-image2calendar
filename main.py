@@ -9,21 +9,20 @@ if os.getenv("API_ENV") != "production":
     load_dotenv()
 
 
+import uvicorn
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import RedirectResponse
 from linebot.v3 import WebhookHandler
+from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import (
-    Configuration,
-    ReplyMessageRequest,
-    TextMessage,
     ApiClient,
+    Configuration,
     MessagingApi,
     MessagingApiBlob,
+    ReplyMessageRequest,
+    TextMessage,
 )
-from linebot.v3.exceptions import InvalidSignatureError
-from linebot.v3.webhooks import MessageEvent, TextMessageContent, ImageMessageContent
-
-import uvicorn
-from fastapi.responses import RedirectResponse
+from linebot.v3.webhooks import ImageMessageContent, MessageEvent, TextMessageContent
 
 logging.basicConfig(level=os.getenv("LOG", "WARNING"))
 logger = logging.getLogger(__file__)
@@ -47,7 +46,6 @@ handler = WebhookHandler(channel_secret)
 import google.generativeai as genai
 from firebase import firebase
 from utils import check_image, create_gcal_url, is_url_valid, shorten_url_by_reurl_api
-
 
 firebase_url = os.getenv("FIREBASE_URL")
 gemini_key = os.getenv("GEMINI_API_KEY")
@@ -132,7 +130,7 @@ def handle_text_message(event):
     else:
         messages.append({"role": "user", "parts": [text]})
         response = model.generate_content(messages)
-        messages.append({"role": "model", "parts": [text]})
+        messages.append({"role": "model", "parts": [response.text]})
         # 更新firebase中的對話紀錄
         fdb.put_async(user_chat_path, None, messages)
         reply_msg = response.text
