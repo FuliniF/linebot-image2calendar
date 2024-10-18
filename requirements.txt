@@ -5,7 +5,7 @@ google.generativeai
 grpcio
 pillow
 requests
-torch==2.3.1+cpu
+torch==2.3.1
 whisperx==3.1.1
 vertexai
 google.cloud.translate_v2
