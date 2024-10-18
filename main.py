@@ -22,7 +22,12 @@ from linebot.v3.messaging import (
     ReplyMessageRequest,
     TextMessage,
 )
-from linebot.v3.webhooks import ImageMessageContent, MessageEvent, TextMessageContent
+from linebot.v3.webhooks import (
+    AudioMessageContent,
+    ImageMessageContent,
+    MessageEvent,
+    TextMessageContent,
+)
 
 logging.basicConfig(level=os.getenv("LOG", "WARNING"))
 logger = logging.getLogger(__file__)
@@ -45,11 +50,22 @@ handler = WebhookHandler(channel_secret)
 
 import google.generativeai as genai
 from firebase import firebase
-from utils import check_image, create_gcal_url, is_url_valid, shorten_url_by_reurl_api
+from utils import (
+    check_image,
+    create_gcal_url,
+    is_url_valid,
+    shorten_url_by_reurl_api,
+    speech_translate_summary,
+)
 
 firebase_url = os.getenv("FIREBASE_URL")
 gemini_key = os.getenv("GEMINI_API_KEY")
 
+CS_begin = False
+CS_gotAudio = False
+CS_gotpdf = False
+CS_audio = None
+CS_pdf = None
 
 # Initialize the Gemini Pro API
 genai.configure(api_key=gemini_key)
@@ -109,7 +125,22 @@ def handle_text_message(event):
     else:
         messages = conversation_data
 
-    if text == "C":
+    if CS_begin:
+        if text == "C":
+            CS_begin = False
+            CS_gotAudio = False
+            CS_gotpdf = False
+            reply_msg = "已取消"
+        elif text == "n" or CS_gotAudio:  # currently not support pdf
+            summary = speech_translate_summary(CS_audio, CS_pdf)
+            CS_begin = False
+            CS_gotAudio = False
+            CS_gotpdf = False
+            CS_audio = None
+            CS_pdf = None
+            reply_msg = summary
+
+    elif text == "C":
         fdb.delete(user_chat_path, None)
         reply_msg = "已清空對話紀錄"
     elif is_url_valid(text):
@@ -127,6 +158,9 @@ def handle_text_message(event):
             f"Summary the following message in Traditional Chinese by less 5 list points. \n{messages}"
         )
         reply_msg = response.text
+    elif text == "course summary":
+        CS_begin = True
+        reply_msg = "好的，請給我課程的錄音檔!"
     else:
         messages.append({"role": "user", "parts": [text]})
         response = model.generate_content(messages)
@@ -172,6 +206,31 @@ def handle_github_message(event):
                 replyToken=event.reply_token, messages=[TextMessage(text=reply_msg)]
             )
         )
+    return "OK"
+
+
+@handler.add(MessageEvent, message=AudioMessageContent)
+def handle_audio_message(event):
+    global CS_begin, CS_gotAudio, CS_audio
+    if CS_begin:
+        with ApiClient(configuration) as api_client:
+            line_bot_blob_api = MessagingApiBlob(api_client)
+            audio_content = line_bot_blob_api.get_message_content(event.message.id)
+        CS_audio = audio_content
+        CS_gotAudio = True
+        reply_msg = '已收到錄音檔，如果有的話，請給我課程的PDF檔！如果沒有，請輸入"n"告訴我～\n(目前尚未支援上傳pdf檔，請輸入任意字元繼續)'
+    else:
+        reply_msg = "你想做什麼呢？如果想整理社課筆記，請先輸入course summary！"
+
+    with ApiClient(configuration) as api_client:
+        line_bot_api = MessagingApi(api_client)
+        line_bot_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[TextMessage(text=reply_msg)],
+            )
+        )
+
     return "OK"
 
 

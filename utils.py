@@ -1,14 +1,13 @@
+import json
 import logging
 import os
 import re
-import requests
-import json
-
-from PIL import Image
-from io import BytesIO
 import urllib
-import google.generativeai as genai
+from io import BytesIO
 
+import google.generativeai as genai
+import requests
+from PIL import Image
 
 logger = logging.getLogger(__file__)
 
@@ -38,10 +37,7 @@ def create_gcal_url(
     return event_url + "&openExternalBrowser=1"
 
 
-def check_image(
-    url=None,
-    b_image=None
-):
+def check_image(url=None, b_image=None):
     genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
     if url is not None:
         response = requests.get(url)
@@ -81,7 +77,6 @@ def check_image(
     return response.text
 
 
-
 def shorten_url_by_reurl_api(short_url):
     url = "https://api.reurl.cc/shorten"
 
@@ -101,3 +96,20 @@ def shorten_url_by_reurl_api(short_url):
     )
     logger.info(response.json())
     return response.json()["short_url"]
+
+
+def speech_translate_summary(audio_file=None, pdf_file=None):
+    from whisperx_audio2text import main as audio2text
+
+    from translation import main as translate
+
+    conv_json, text, language = audio2text(audio_file)
+
+    output_file = None
+    # output_file = "translated/" + language + "_" + audio_file.replace(".mp3", ".txt")
+    # if not os.path.exists("translated"):
+    #     os.makedirs("translated")
+
+    translated_text = translate(text, output_file)
+
+    return translated_text
