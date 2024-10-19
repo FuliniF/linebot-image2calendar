@@ -112,6 +112,6 @@ def speech_translate_summary(audio_file=None, pdf_file=None):
     #     os.makedirs("translated")
 
     # print("done. translate...")
-    # translated_text = translate(text, output_file)
+    translated_text = translate(text, output_file)
 
-    return text
+    return translated_text

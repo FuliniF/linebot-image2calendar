@@ -220,8 +220,8 @@ def handle_audio_message(event):
     if CS_begin:
         CS_audio = audio_content
         CS_gotAudio = True
-        reply_msg = f"audio_content type: {type(audio_content)}"
-        # reply_msg = '已收到錄音檔，如果有的話，請給我課程的PDF檔！如果沒有，請輸入"n"告訴我～\n(目前尚未支援上傳pdf檔，請輸入任意字元繼續)'
+        # reply_msg = f"audio_content type: {type(audio_content)}"
+        reply_msg = '已收到錄音檔，如果有的話，請給我課程的PDF檔！如果沒有，請輸入"n"告訴我～\n(目前尚未支援上傳pdf檔，請輸入任意字元繼續)'
     else:
         reply_msg = "你想做什麼呢？如果想整理社課筆記，請先輸入course summary！"
 

@@ -7,6 +7,7 @@ pillow
 requests
 torch==2.3.1
 faster-whisper
+opencc
 vertexai
 pydub
 git+https://github.com/ozgur/python-firebase
