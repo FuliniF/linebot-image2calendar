@@ -1,7 +1,8 @@
 import os
 import tempfile
 
-import whisperx
+# import whisperx
+from faster_whisper import WhisperModel
 from pydub import AudioSegment
 
 device = "cpu"
@@ -11,7 +12,9 @@ hf_api_key = os.getenv("HUGGINGFACE_API_KEY")
 
 
 def load_model(size="tiny", device="cpu", compute_type="int8"):
-    return whisperx.load_model(size, device, compute_type=compute_type)
+    # return whisperx.load_model(size, device, compute_type=compute_type)
+    model = WhisperModel(size, device, compute_type=compute_type)
+    return model
 
 
 def m4a_to_mp3(m4a_file):
@@ -39,51 +42,67 @@ def post_process(result):
 
 
 def main(audio_file):
-    # byte to .mp3
     with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as temp_audio_file:
         temp_audio_file.write(audio_file)
         audio_file = temp_audio_file.name
 
-    # model size depends on the available GPU memory of your machine
     model = load_model("tiny", device, compute_type=compute_type)
-    audio = whisperx.load_audio(audio_file)
-    print("Transcribing...")
-    result = model.transcribe(audio, batch_size=batch_size)
-    language = result["language"]
+    segments, info = model.transcribe(audio_file, beam_size=5)
+    language = info.language
 
-    print("Aligning...")
-    model_a, metadata = whisperx.load_align_model(
-        language_code=result["language"], device=device
-    )
-    result = whisperx.align(
-        result["segments"],
-        model_a,
-        metadata,
-        audio,
-        device,
-        return_char_alignments=False,
-    )
+    result_text = ""
+    for segment in segments:
+        result_text += segment.text + "\n"
 
-    print("Assigning speakers...")
-    diarize_model = whisperx.DiarizationPipeline(
-        use_auth_token=hf_api_key, device=device
-    )
+    return segments, result_text, language
 
-    # add min/max number of speakers if known
-    diarize_segments = diarize_model(audio)
-    # diarize_model(audio, min_speakers=min_speakers, max_speakers=max_speakers)
 
-    result = whisperx.assign_word_speakers(diarize_segments, result)
+# def old_main(audio_file):
+#     # byte to .mp3
+#     with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as temp_audio_file:
+#         temp_audio_file.write(audio_file)
+#         audio_file = temp_audio_file.name
 
-    conv_json, text = post_process(result)
-    # print(text)
-    # output_file = audio_file.replace(".mp3", ".txt")
-    # output_file = "audios/" + language + "_" + output_file.split("/")[-1]
-    # if not os.path.exists("audios"):
-    #     os.makedirs("audios")
-    # with open(output_file, "w") as f:
-    #     f.write(text)
-    return conv_json, text, language  # return json and all plain text
+#     # model size depends on the available GPU memory of your machine
+#     model = load_model("tiny", device, compute_type=compute_type)
+#     audio = whisperx.load_audio(audio_file)
+#     print("Transcribing...")
+#     result = model.transcribe(audio, batch_size=batch_size)
+#     language = result["language"]
+
+#     print("Aligning...")
+#     model_a, metadata = whisperx.load_align_model(
+#         language_code=result["language"], device=device
+#     )
+#     result = whisperx.align(
+#         result["segments"],
+#         model_a,
+#         metadata,
+#         audio,
+#         device,
+#         return_char_alignments=False,
+#     )
+
+#     print("Assigning speakers...")
+#     diarize_model = whisperx.DiarizationPipeline(
+#         use_auth_token=hf_api_key, device=device
+#     )
+
+#     # add min/max number of speakers if known
+#     diarize_segments = diarize_model(audio)
+#     # diarize_model(audio, min_speakers=min_speakers, max_speakers=max_speakers)
+
+#     result = whisperx.assign_word_speakers(diarize_segments, result)
+
+#     conv_json, text = post_process(result)
+#     # print(text)
+#     # output_file = audio_file.replace(".mp3", ".txt")
+#     # output_file = "audios/" + language + "_" + output_file.split("/")[-1]
+#     # if not os.path.exists("audios"):
+#     #     os.makedirs("audios")
+#     # with open(output_file, "w") as f:
+#     #     f.write(text)
+#     return conv_json, text, language  # return json and all plain text
 
 
 if __name__ == "__main__":
