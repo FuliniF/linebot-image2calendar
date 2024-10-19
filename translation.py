@@ -1,7 +1,7 @@
 import os
 
 import vertexai
-from google.cloud import translate_v2 as translate
+from google.cloud import translate
 from vertexai.generative_models import GenerativeModel, Part, SafetySetting
 
 YOUR_PROJECT_NAME = os.getenv("PROJECT_NAME")

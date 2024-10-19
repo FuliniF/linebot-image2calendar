@@ -103,6 +103,7 @@ def speech_translate_summary(audio_file=None, pdf_file=None):
 
     from translation import main as translate
 
+    print("audio2text...")
     conv_json, text, language = audio2text(audio_file)
 
     output_file = None
@@ -110,6 +111,7 @@ def speech_translate_summary(audio_file=None, pdf_file=None):
     # if not os.path.exists("translated"):
     #     os.makedirs("translated")
 
+    print("done. translate...")
     translated_text = translate(text, output_file)
 
     return translated_text
