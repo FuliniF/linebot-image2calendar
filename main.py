@@ -8,6 +8,7 @@ if os.getenv("API_ENV") != "production":
 
     load_dotenv()
 
+import tempfile
 
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request
@@ -235,6 +236,12 @@ def handle_audio_message(event):
         line_bot_blob_api = MessagingApiBlob(api_client)
         audio_content = line_bot_blob_api.get_message_content(event.message.id)
     if CS_begin:
+        with tempfile.NamedTemporaryFile(
+            suffix=".mp3", delete=False
+        ) as temp_audio_file:
+            temp_audio_file.write(audio_content)
+            audio_content = temp_audio_file.name
+
         CS_audio = audio_content
         CS_gotAudio = True
         # reply_msg = f"audio_content type: {type(audio_content)}"
