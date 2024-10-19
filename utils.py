@@ -111,7 +111,7 @@ def speech_translate_summary(audio_file=None, pdf_file=None):
     # if not os.path.exists("translated"):
     #     os.makedirs("translated")
 
-    print("done. translate...")
-    translated_text = translate(text, output_file)
+    # print("done. translate...")
+    # translated_text = translate(text, output_file)
 
-    return translated_text
+    return text
