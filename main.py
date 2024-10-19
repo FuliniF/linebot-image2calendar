@@ -207,18 +207,6 @@ def handle_github_message(event):
     else:
         reply_msg = "你想做什麼呢？如果想整理社課筆記，請先輸入course summary！"
 
-    # image_data = check_image(b_image=image_content)
-    # image_data = json.loads(image_data)
-    # logger.info("---- Image handler JSON ----")
-    # logger.info(image_data)
-    # g_url = create_gcal_url(
-    #     image_data["title"],
-    #     image_data["time"],
-    #     image_data["location"],
-    #     image_data["content"],
-    # )
-    # reply_msg = shorten_url_by_reurl_api(g_url)
-
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
         line_bot_api.reply_message(

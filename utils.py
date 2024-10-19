@@ -106,13 +106,8 @@ def speech_translate_summary(audio_file=None, bimg=None):
     print("audio2text...")
     conv_json, text, language = audio2text(audio_file)
 
-    output_file = None
-    # output_file = "translated/" + language + "_" + audio_file.replace(".mp3", ".txt")
-    # if not os.path.exists("translated"):
-    #     os.makedirs("translated")
-
-    # print("done. translate...")
-    translated_text = translate(text, output_file)
+    print("done. translate...")
+    translated_text = translate(text, language)
 
     image = None
     if bimg is not None:
