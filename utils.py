@@ -114,4 +114,14 @@ def speech_translate_summary(audio_file=None, pdf_file=None):
     # print("done. translate...")
     translated_text = translate(text, output_file)
 
-    return translated_text
+    model = genai.GenerativeModel("gemini-1.5-flash")
+    if pdf_file is None:
+        prompt = f"根據以下課程逐字稿。撰寫一份本課程的重點筆記。\n重點筆記應以markdown格式撰寫，且不可超過20行。\n課程逐字稿：\n{translated_text}"
+        response = model.generate_content([prompt])
+    else:
+        prompt = f"根據以下課程逐字稿及簡報內容。撰寫一份本課程的重點筆記。\n重點筆記應以markdown格式撰寫，且不可超過20行。\n課程逐字稿：\n{translated_text}"
+        response = model.generate_content([prompt, pdf_file])
+
+    logger.info(response.text)
+
+    return response.text
