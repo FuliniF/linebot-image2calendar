@@ -190,17 +190,33 @@ def handle_github_message(event):
     with ApiClient(configuration) as api_client:
         line_bot_blob_api = MessagingApiBlob(api_client)
         image_content = line_bot_blob_api.get_message_content(event.message.id)
-    image_data = check_image(b_image=image_content)
-    image_data = json.loads(image_data)
-    logger.info("---- Image handler JSON ----")
-    logger.info(image_data)
-    g_url = create_gcal_url(
-        image_data["title"],
-        image_data["time"],
-        image_data["location"],
-        image_data["content"],
-    )
-    reply_msg = shorten_url_by_reurl_api(g_url)
+
+    global CS_begin, CS_gotpdf, CS_pdf, CS_audio, CS_gotAudio
+
+    if CS_begin:
+        CS_pdf = image_content
+        CS_gotpdf = True
+        summary = speech_translate_summary(CS_audio, CS_pdf)
+        CS_begin = False
+        CS_gotAudio = False
+        CS_gotpdf = False
+        CS_audio = None
+        CS_pdf = None
+        reply_msg = summary
+    else:
+        reply_msg = "你想做什麼呢？如果想整理社課筆記，請先輸入course summary！"
+
+    # image_data = check_image(b_image=image_content)
+    # image_data = json.loads(image_data)
+    # logger.info("---- Image handler JSON ----")
+    # logger.info(image_data)
+    # g_url = create_gcal_url(
+    #     image_data["title"],
+    #     image_data["time"],
+    #     image_data["location"],
+    #     image_data["content"],
+    # )
+    # reply_msg = shorten_url_by_reurl_api(g_url)
 
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
@@ -222,7 +238,7 @@ def handle_audio_message(event):
         CS_audio = audio_content
         CS_gotAudio = True
         # reply_msg = f"audio_content type: {type(audio_content)}"
-        reply_msg = '已收到錄音檔，如果有的話，請給我課程的PDF檔！如果沒有，請輸入"n"告訴我～'  # \n(目前尚未支援上傳pdf檔，請輸入任意字元繼續)
+        reply_msg = '已收到錄音檔，如果有的話，請給我課程相關的截圖或圖片！\n如果沒有，請輸入"n"告訴我～'  # \n(目前尚未支援上傳pdf檔，請輸入任意字元繼續)
     else:
         reply_msg = "你想做什麼呢？如果想整理社課筆記，請先輸入course summary！"
 
@@ -238,45 +254,45 @@ def handle_audio_message(event):
     return "OK"
 
 
-@handler.add(MessageEvent, message=FileMessageContent)
-def handle_file_message(event):
-    global CS_begin, CS_gotpdf, CS_pdf, CS_audio, CS_gotAudio
-    with ApiClient(configuration) as api_client:
-        line_bot_blob_api = MessagingApiBlob(api_client)
-        file_content = line_bot_blob_api.get_message_content(event.message.id)
-    reply_msg = f"file_content type: {type(file_content)}"
-    with ApiClient(configuration) as api_client:
-        line_bot_api = MessagingApi(api_client)
-        line_bot_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[TextMessage(text=reply_msg)],
-            )
-        )
+# @handler.add(MessageEvent, message=FileMessageContent)
+# def handle_file_message(event):
+#     global CS_begin, CS_gotpdf, CS_pdf, CS_audio, CS_gotAudio
+#     with ApiClient(configuration) as api_client:
+#         line_bot_blob_api = MessagingApiBlob(api_client)
+#         file_content = line_bot_blob_api.get_message_content(event.message.id)
+#     reply_msg = f"file_content type: {type(file_content)}"
+#     with ApiClient(configuration) as api_client:
+#         line_bot_api = MessagingApi(api_client)
+#         line_bot_api.reply_message(
+#             ReplyMessageRequest(
+#                 reply_token=event.reply_token,
+#                 messages=[TextMessage(text=reply_msg)],
+#             )
+#         )
 
-    if CS_begin:
-        CS_pdf = file_content
-        CS_gotpdf = True
-        summary = speech_translate_summary(CS_audio, CS_pdf)
-        CS_begin = False
-        CS_gotAudio = False
-        CS_gotpdf = False
-        CS_audio = None
-        CS_pdf = None
-        reply_msg = summary
-    else:
-        reply_msg = "你想做什麼呢？如果想整理社課筆記，請先輸入course summary！"
+#     if CS_begin:
+#         CS_pdf = file_content
+#         CS_gotpdf = True
+#         summary = speech_translate_summary(CS_audio, CS_pdf)
+#         CS_begin = False
+#         CS_gotAudio = False
+#         CS_gotpdf = False
+#         CS_audio = None
+#         CS_pdf = None
+#         reply_msg = summary
+#     else:
+#         reply_msg = "你想做什麼呢？如果想整理社課筆記，請先輸入course summary！"
 
-    with ApiClient(configuration) as api_client:
-        line_bot_api = MessagingApi(api_client)
-        line_bot_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[TextMessage(text=reply_msg)],
-            )
-        )
+#     with ApiClient(configuration) as api_client:
+#         line_bot_api = MessagingApi(api_client)
+#         line_bot_api.reply_message(
+#             ReplyMessageRequest(
+#                 reply_token=event.reply_token,
+#                 messages=[TextMessage(text=reply_msg)],
+#             )
+#         )
 
-    return "OK"
+#     return "OK"
 
 
 if __name__ == "__main__":
