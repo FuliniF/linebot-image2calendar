@@ -118,12 +118,14 @@ def handle_text_message(event):
     user_chat_path = f"chat/{user_id}"
     # chat_state_path = f'state/{user_id}'
     conversation_data = fdb.get(user_chat_path, None)
-    model = genai.GenerativeModel("gemini-1.5-pro")
+    model = genai.GenerativeModel("gemini-1.5-flash")
 
     if conversation_data is None:
         messages = []
     else:
         messages = conversation_data
+
+    global CS_begin, CS_gotAudio, CS_gotpdf, CS_audio, CS_pdf
 
     if CS_begin:
         if text == "C":
@@ -212,13 +214,14 @@ def handle_github_message(event):
 @handler.add(MessageEvent, message=AudioMessageContent)
 def handle_audio_message(event):
     global CS_begin, CS_gotAudio, CS_audio
+    with ApiClient(configuration) as api_client:
+        line_bot_blob_api = MessagingApiBlob(api_client)
+        audio_content = line_bot_blob_api.get_message_content(event.message.id)
     if CS_begin:
-        with ApiClient(configuration) as api_client:
-            line_bot_blob_api = MessagingApiBlob(api_client)
-            audio_content = line_bot_blob_api.get_message_content(event.message.id)
         CS_audio = audio_content
         CS_gotAudio = True
-        reply_msg = '已收到錄音檔，如果有的話，請給我課程的PDF檔！如果沒有，請輸入"n"告訴我～\n(目前尚未支援上傳pdf檔，請輸入任意字元繼續)'
+        reply_msg = f"audio_content type: {type(audio_content)}"
+        # reply_msg = '已收到錄音檔，如果有的話，請給我課程的PDF檔！如果沒有，請輸入"n"告訴我～\n(目前尚未支援上傳pdf檔，請輸入任意字元繼續)'
     else:
         reply_msg = "你想做什麼呢？如果想整理社課筆記，請先輸入course summary！"
 
