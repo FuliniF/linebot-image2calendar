@@ -1,4 +1,5 @@
 import os
+import tempfile
 
 import whisperx
 from pydub import AudioSegment
@@ -38,8 +39,10 @@ def post_process(result):
 
 
 def main(audio_file):
-    if audio_file.endswith(".m4a"):
-        audio_file = m4a_to_mp3(audio_file)
+    # byte to .mp3
+    with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as temp_audio_file:
+        temp_audio_file.write(audio_file)
+        audio_file = temp_audio_file.name
 
     # model size depends on the available GPU memory of your machine
     model = load_model("tiny", device, compute_type=compute_type)
