@@ -16,11 +16,12 @@ from fastapi.responses import RedirectResponse
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import (
-    ApiClient,
+    AsyncApiClient,
+    AsyncMessagingApi,
     Configuration,
-    MessagingApi,
     MessagingApiBlob,
     ReplyMessageRequest,
+    ShowLoadingAnimationRequest,
     TextMessage,
 )
 from linebot.v3.webhooks import (
@@ -136,13 +137,19 @@ def handle_text_message(event):
             CS_gotpdf = False
             reply_msg = "已取消"
         elif text == "n":
-            summary = speech_translate_summary(CS_audio, CS_pdf)
-            CS_begin = False
-            CS_gotAudio = False
-            CS_gotpdf = False
-            CS_audio = None
-            CS_pdf = None
-            reply_msg = summary
+            line_bot_api.show_loading_animation(
+                ShowLoadingAnimationRequest(chat_id=user_id, loading_seconds=5)
+            )
+            try:
+                summary = speech_translate_summary(CS_audio, None)
+                CS_begin = False
+                CS_gotAudio = False
+                CS_gotpdf = False
+                CS_audio = None
+                CS_pdf = None
+                reply_msg = summary
+            except Exception as e:
+                reply_msg = f"Error: {e}"
 
     elif text == "C":
         fdb.delete(user_chat_path, None)
@@ -173,8 +180,8 @@ def handle_text_message(event):
         fdb.put_async(user_chat_path, None, messages)
         reply_msg = response.text
 
-    with ApiClient(configuration) as api_client:
-        line_bot_api = MessagingApi(api_client)
+    with AsyncApiClient(configuration) as api_client:
+        line_bot_api = AsyncMessagingApi(api_client)
         line_bot_api.reply_message(
             ReplyMessageRequest(
                 reply_token=event.reply_token,
